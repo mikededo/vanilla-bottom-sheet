@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef, MouseEventHandler } from "react";
+import React, { useState, useEffect, useRef, PointerEventHandler } from "react";
+import { usePreventScroll } from "./use-prevent-scroll";
+
 const between = (min: number, max: number, value: number) => {
   return value >= min && value <= max;
 };
@@ -39,6 +41,8 @@ export const BottomSheet = () => {
     from: 0,
   });
 
+  usePreventScroll({ isDisabled: !isDragging });
+
   const updateDragState = (to: number) => {
     const deltaY = dragState.last - to;
     dragState.last = to;
@@ -65,20 +69,20 @@ export const BottomSheet = () => {
     return 0;
   };
 
-  const handleOnMove = (e: MouseEvent) => {
+  const handleOnMove = (e: PointerEvent) => {
     if (!isDragging) {
       return;
     }
 
     updateDragState(e.clientY);
 
-    block.current.style.transition = "height 0.15s ease-out";
+    block.current.style.setProperty(BS_TRANSITION_DURATION, "0s");
     block.current.style.height = `${withMinHeightLimit(
       blockHeight - dragState.drag,
     )}px`;
   };
 
-  const handleMouseDown: MouseEventHandler = (e) => {
+  const handleMouseDown: PointerEventHandler = (e) => {
     e.preventDefault();
 
     dragState.from = e.clientY;
@@ -91,8 +95,7 @@ export const BottomSheet = () => {
 
     // Move to mid-height
     const to = animateTo();
-    block.current.style.transition =
-      "height 0.35s cubic-bezier(0.22, 1, 0.36, 1)";
+    block.current.style.setProperty(BS_TRANSITION_DURATION, "0.35s");
     block.current.style.height = `${withMinHeightLimit(to)}px`;
 
     // Reset variables
@@ -105,17 +108,16 @@ export const BottomSheet = () => {
       return;
     }
 
-    console.log("calculate height");
     setBlockHeight(block.current.getBoundingClientRect().height);
   }, []);
 
   useEffect(() => {
-    document.addEventListener("mousemove", handleOnMove);
-    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("pointermove", handleOnMove);
+    document.addEventListener("pointerup", handleMouseUp);
 
     return () => {
-      document.removeEventListener("mousemove", handleOnMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("pointermove", handleOnMove);
+      document.removeEventListener("pointerup", handleMouseUp);
     };
   }, [isDragging]);
 
@@ -137,20 +139,22 @@ export const BottomSheet = () => {
           bottom: 0,
           left: 0,
           right: 0,
-          transition: `height var(${BS_TRANSITION_DURATION}) var(${BS_TRANSITION_DURATION})`,
+          transition: `height var(${BS_TRANSITION_DURATION}) cubic-bezier(0.22, 1, 0.36, 1)`,
         }}
       >
         <div
           style={{ width: "100%", padding: 8 }}
-          onMouseDown={handleMouseDown}
+          onPointerDown={handleMouseDown}
         >
           <div
             style={{
               height: 8,
               borderRadius: 9999,
               width: 48,
-              backgroundColor: "#e3e3e3",
+              backgroundColor: isDragging ? "#8A2CE8" : "#e3e3e3",
               margin: "auto",
+              transition:
+                "background-color 0.20s cubic-bezier(0.22, 1, 0.36, 1)",
             }}
           ></div>
           <div>
